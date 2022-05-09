@@ -1,0 +1,5 @@
+rootProject.name = 'javalearning'
+include 'io'
+include 'pattern'
+include 'tdd'
+

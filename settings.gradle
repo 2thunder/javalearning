@@ -2,4 +2,6 @@ rootProject.name = 'javalearning'
 include 'io'
 include 'pattern'
 include 'tdd'
+include 'tdd:di'
+findProject(':tdd:di')?.name = 'di'
 

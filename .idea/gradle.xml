@@ -12,6 +12,7 @@
             <option value="$PROJECT_DIR$/io" />
             <option value="$PROJECT_DIR$/pattern" />
             <option value="$PROJECT_DIR$/tdd" />
+            <option value="$PROJECT_DIR$/tdd/di" />
           </set>
         </option>
       </GradleProjectSettings>

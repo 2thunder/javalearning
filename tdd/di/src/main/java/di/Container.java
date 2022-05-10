@@ -1,4 +1,4 @@
-package io.thunder.tdd.di;
+package di;
 
 public class Container {
 }

@@ -1,15 +1,11 @@
 package di;
 
-import com.sun.jdi.InvocationException;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Context {
@@ -25,7 +21,7 @@ public class Context {
             try {
                 // get dependency instance
                 Object[] dependencies = Arrays.stream(constructor.getParameters())
-                    .map(p -> get(p.getType()))
+                    .map(p -> get(p.getType()).orElseThrow(DependencyNotFoundException::new))
                     .toArray();
                 return (Type) constructor.newInstance(dependencies);
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
@@ -50,8 +46,7 @@ public class Context {
         });
     }
 
-    public <Type> Type get(Class<Type> type) {
-        return (Type) providers.get(type).get();
+    public <T> Optional<T> get(Class<T> componentClass) {
+        return Optional.ofNullable(providers.get(componentClass)).map(provider -> (T) provider.get());
     }
-
 }

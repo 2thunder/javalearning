@@ -17,6 +17,18 @@ public class Context {
     }
 
     public <Type, Implementation> void bind(Class<Type> componentClass, Class<Implementation> implementation) {
+        Constructor<?>[] injectedConstructors = Arrays.stream(implementation.getConstructors()).filter(c -> c.isAnnotationPresent(Inject.class))
+            .toArray(Constructor<?>[]::new);
+
+        if(injectedConstructors.length > 1){
+            throw new IllegalComponentException();
+        }
+
+        // 如果没有注入构造函数，则取默认构造函数, 如果默认构造函数没有，则抛出异常
+        if(injectedConstructors.length == 0 && Arrays.stream(implementation.getConstructors()).filter(c -> c.getParameters().length == 0).findFirst().map(c -> false).orElse(true)){
+            throw new IllegalComponentException();
+        }
+
         providers.put(componentClass, (Provider<Type>) () -> {
             try {
                 Constructor<Implementation> constructor = getInjectConstructor(implementation);
@@ -35,7 +47,6 @@ public class Context {
     private <T> Constructor<T> getInjectConstructor(Class<T> implementation){
         Stream<Constructor<?>> injectConstructors = Arrays.stream(implementation.getConstructors())
             .filter(c -> c.isAnnotationPresent(Inject.class));
-
         return (Constructor<T>) injectConstructors
             .findFirst()
             .orElseGet(() -> getDefaultConstructor(implementation));

@@ -75,6 +75,23 @@ public class ContainerTest {
 
                     assertEquals("indirect dependency", ((DependencyWithInjectConstructor) dependency).getDependency());
                 }
+
+                @Test
+                public void should_throw_exception_if_multi_inject_constructors_provided() {
+                    assertThrows(
+                        IllegalComponentException.class,
+                        () -> context.bind(Component.class, ComponentWithMultiInjectConstructorImplementation.class)
+                    );
+                }
+
+                @Test
+                public void should_throw_exception_if_no_inject_nodefault() {
+                    assertThrows(
+                        IllegalComponentException.class,
+                        () -> context.bind(Component.class, ComponentWithMultiInjectConstructorImplementation.class)
+                    );
+
+                }
             }
 
             @Nested
@@ -125,11 +142,41 @@ class ComponentWithInjectConstructorImplementation implements Component {
     }
 }
 
+class ComponentWithMultiInjectConstructorImplementation implements Component {
+
+    private String dependency;
+
+    private Double test;
+
+    @Inject
+    public ComponentWithMultiInjectConstructorImplementation(String dependency) {
+        this.dependency = dependency;
+    }
+
+    @Inject
+    public ComponentWithMultiInjectConstructorImplementation(String dependency, Double test) {
+        this.dependency = dependency;
+        this.test = test;
+    }
+}
+
 class DependencyWithInjectConstructor implements Dependency {
     String dependency;
 
     @Inject
     public DependencyWithInjectConstructor(String dependency) {
+        this.dependency = dependency;
+    }
+
+    public String getDependency() {
+        return dependency;
+    }
+}
+
+class ComponentWithNoInjectConstructor implements Component {
+    String dependency;
+
+    public ComponentWithNoInjectConstructor(String dependency) {
         this.dependency = dependency;
     }
 

@@ -36,8 +36,7 @@ public class ContainerTest {
             // TODO: interface
 
             @Test
-            public void should(){
-
+            void should_return_optional_if_component_not_defined() {
                 Optional<Component> componentOptional = context.get(Component.class);
                 assertTrue(componentOptional.isEmpty());
             }
@@ -94,7 +93,7 @@ public class ContainerTest {
                 }
 
                 @Test
-                public void should_throw_exception_if_no_inject_nodefault() {
+                public void should_throw_exception_if_no_inject_nor_no_default_constructor() {
                     assertThrows(
                         IllegalComponentException.class,
                         () -> context.bind(Component.class, ComponentWithMultiInjectConstructorImplementation.class)
@@ -110,6 +109,13 @@ public class ContainerTest {
                         DependencyNotFoundException.class,
                         () -> context.get(Component.class)
                     );
+                }
+
+                @Test
+                public void should_throw_exception_if_cycle_dependency() {
+                    context.bind(Component.class, ComponentWithInjectConstructorImplementation.class);
+                    context.bind(Dependency.class, DependencyDependedOnComponent.class);
+                    assertThrows(CycleDependenciesFoundException.class, () -> context.get(Component.class));
                 }
             }
 
@@ -201,5 +207,14 @@ class ComponentWithNoInjectConstructor implements Component {
 
     public String getDependency() {
         return dependency;
+    }
+}
+
+class DependencyDependedOnComponent implements Dependency {
+    private final Component component;
+
+    @Inject
+    public DependencyDependedOnComponent(Component component) {
+        this.component = component;
     }
 }

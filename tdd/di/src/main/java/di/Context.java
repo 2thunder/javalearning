@@ -17,17 +17,37 @@ public class Context {
 
     public <Type, Implementation> void bind(Class<Type> componentClass, Class<Implementation> implementation) {
         Constructor<Implementation> constructor = getInjectConstructor(implementation);
-        providers.put(componentClass, (Provider<Type>) () -> {
+        providers.put(componentClass, new ConstructorInjectProvider(constructor));
+    }
+
+    public class ConstructorInjectProvider<T> implements Provider<T> {
+
+        private final Constructor<T> constructor;
+
+        private boolean constructing = false;
+
+        public ConstructorInjectProvider(Constructor<T> constructor) {
+            this.constructor = constructor;
+        }
+
+        @Override
+        public T get() {
+            if (constructing) {
+                throw new CycleDependenciesFoundException();
+            }
             try {
+                constructing = true;
                 // get dependency instance
                 Object[] dependencies = Arrays.stream(constructor.getParameters())
-                    .map(p -> get(p.getType()).orElseThrow(DependencyNotFoundException::new))
+                    .map(p -> Context.this.get(p.getType()).orElseThrow(DependencyNotFoundException::new))
                     .toArray();
-                return (Type) constructor.newInstance(dependencies);
+                return constructor.newInstance(dependencies);
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
                 throw new RuntimeException(e);
+            } finally {
+                constructing = false;
             }
-        });
+        }
     }
 
 

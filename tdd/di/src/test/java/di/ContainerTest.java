@@ -105,16 +105,25 @@ public class ContainerTest {
                 @Test
                 public void should_throw_exception_if_dependency_not_found() {
                     context.bind(Component.class, ComponentWithInjectConstructorImplementation.class);
-                    assertThrows(
+                    DependencyNotFoundException dependencyNotFoundException = assertThrows(
                         DependencyNotFoundException.class,
                         () -> context.get(Component.class)
                     );
+                    assertEquals(Dependency.class, dependencyNotFoundException.getDenpendency());
                 }
 
                 @Test
                 public void should_throw_exception_if_cycle_dependency() {
                     context.bind(Component.class, ComponentWithInjectConstructorImplementation.class);
                     context.bind(Dependency.class, DependencyDependedOnComponent.class);
+                    assertThrows(CycleDependenciesFoundException.class, () -> context.get(Component.class));
+                }
+
+                @Test
+                public void should_throw_transitive_cycle_dependencies_exception() {
+                    context.bind(Component.class, ComponentWithInjectConstructorImplementation.class);
+                    context.bind(Dependency.class, DependencyDependOnAnotherDependency.class);
+                    context.bind(AnotherDependency.class, AnotherDependencyDependOnComponent.class);
                     assertThrows(CycleDependenciesFoundException.class, () -> context.get(Component.class));
                 }
             }
@@ -145,6 +154,10 @@ interface Component {
 }
 
 interface Dependency {
+
+}
+
+interface AnotherDependency {
 
 }
 
@@ -216,5 +229,24 @@ class DependencyDependedOnComponent implements Dependency {
     @Inject
     public DependencyDependedOnComponent(Component component) {
         this.component = component;
+    }
+}
+
+class AnotherDependencyDependOnComponent implements AnotherDependency {
+    private final Component component;
+
+    @Inject
+    public AnotherDependencyDependOnComponent(Component component) {
+        this.component = component;
+    }
+}
+
+
+class DependencyDependOnAnotherDependency implements Dependency {
+    private final AnotherDependency anotherDependency;
+
+    @Inject
+    public DependencyDependOnAnotherDependency(AnotherDependency anotherDependency) {
+        this.anotherDependency = anotherDependency;
     }
 }

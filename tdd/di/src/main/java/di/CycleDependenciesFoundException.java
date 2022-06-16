@@ -1,5 +1,8 @@
 package di;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * 循环依赖异常
  *
@@ -8,7 +11,18 @@ package di;
  * @date 2022/5/17 13:36
  */
 public class CycleDependenciesFoundException extends RuntimeException {
-    public Class<?>[] getComponents() {
-        return null;
+    private final Set<Class<?>> components = new HashSet<>();
+
+    public CycleDependenciesFoundException(Class<?> type) {
+        components.add(type);
+    }
+
+    public CycleDependenciesFoundException(Class<?> componentType, CycleDependenciesFoundException e) {
+        components.add(componentType);
+        components.addAll(e.getComponents());
+    }
+
+    public Set<Class<?>> getComponents() {
+        return components;
     }
 }

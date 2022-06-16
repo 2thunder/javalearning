@@ -8,6 +8,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+
+/**
+ * 容器
+ *
+ * @author 2thunder
+ * @version V1.0
+ * @date 2022/5/31 09:34
+ */
 public class Context {
     private Map<Class<?>, Provider<?>> providers = new HashMap<>();
 
@@ -17,17 +25,21 @@ public class Context {
 
     public <Type, Implementation> void bind(Class<Type> componentClass, Class<Implementation> implementation) {
         Constructor<Implementation> constructor = getInjectConstructor(implementation);
-        providers.put(componentClass, new ConstructorInjectProvider(constructor));
+        providers.put(componentClass, new ConstructorInjectProvider(constructor, componentClass));
     }
 
     public class ConstructorInjectProvider<T> implements Provider<T> {
 
         private final Constructor<T> constructor;
 
+        private final Class<?> componentType;
+
         private boolean constructing = false;
 
-        public ConstructorInjectProvider(Constructor<T> constructor) {
+
+        public ConstructorInjectProvider(Constructor<T> constructor, Class<?> componentType) {
             this.constructor = constructor;
+            this.componentType = componentType;
         }
 
         @Override
@@ -39,7 +51,7 @@ public class Context {
                 constructing = true;
                 // get dependency instance
                 Object[] dependencies = Arrays.stream(constructor.getParameters())
-                    .map(p -> Context.this.get(p.getType()).orElseThrow(() -> new DependencyNotFoundException(p.getType())))
+                    .map(p -> Context.this.get(p.getType()).orElseThrow(() -> new DependencyNotFoundException(p.getType(), componentType)))
                     .toArray();
                 return constructor.newInstance(dependencies);
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {

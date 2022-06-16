@@ -1,13 +1,30 @@
 package di;
 
 public class DependencyNotFoundException extends RuntimeException {
-    Class<?> denpendencyClass;
+    /**
+     * 依赖类型
+     */
+    private final Class<?> dependencyClass;
 
-    public DependencyNotFoundException(Class<?> denpendencyClass) {
-        this.denpendencyClass = denpendencyClass;
+    /**
+     * 组件类型
+     */
+    private Class<?> componentClass;
+
+    public DependencyNotFoundException(Class<?> dependencyClass) {
+        this.dependencyClass = dependencyClass;
     }
 
-    public Class<?> getDenpendency() {
-        return denpendencyClass;
+    public DependencyNotFoundException(Class<?> dependencyClass, Class<?> componentClass) {
+        this.dependencyClass = dependencyClass;
+        this.componentClass = componentClass;
+    }
+
+    public Class<?> getDependency() {
+        return dependencyClass;
+    }
+
+    public Class<?> getComponent() {
+        return componentClass;
     }
 }

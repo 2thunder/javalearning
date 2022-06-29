@@ -2,6 +2,7 @@ package di;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Stack;
 
 /**
  * 循环依赖异常
@@ -13,13 +14,8 @@ import java.util.Set;
 public class CycleDependenciesFoundException extends RuntimeException {
     private final Set<Class<?>> components = new HashSet<>();
 
-    public CycleDependenciesFoundException(Class<?> type) {
-        components.add(type);
-    }
-
-    public CycleDependenciesFoundException(Class<?> componentType, CycleDependenciesFoundException e) {
-        components.add(componentType);
-        components.addAll(e.getComponents());
+    public CycleDependenciesFoundException(Stack<Class<?>> visiting) {
+        components.addAll(visiting);
     }
 
     public Set<Class<?>> getComponents() {

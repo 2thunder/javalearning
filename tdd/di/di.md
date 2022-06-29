@@ -45,3 +45,6 @@ https://time.geekbang.org/column/article/502058
   * 容器组件默认不是 Single 生命周期
 * 自定义 Scope 
   * 标注可向容器注册自定义 Scope 标注的回调
+
+
+- [x] DI Container（5）：API接口该怎么设计？

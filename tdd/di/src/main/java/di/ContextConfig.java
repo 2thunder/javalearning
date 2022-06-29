@@ -36,20 +36,27 @@ public class ContextConfig {
     }
 
     public Context getContext() {
-        // 检查 dependency
-        for (Class<?> component : dependencies.keySet()) {
-            for (Class<?> dependency : dependencies.get(component)) {
-                if (!dependencies.containsKey(dependency)) {
-                    throw new DependencyNotFoundException(dependency, component);
-                }
-            }
-        }
+        dependencies.keySet().forEach(component -> checkDependencies(component, new Stack<>()));
         return new Context() {
             @Override
             public <T> Optional<T> get(Class<T> componentClass) {
                 return Optional.ofNullable(providers.get(componentClass)).map(provider -> (T) provider.get(this));
             }
         };
+    }
+
+    private void checkDependencies(Class<?> component, Stack<Class<?>> visiting) {
+        for (Class<?> dependency : dependencies.get(component)) {
+            if (!dependencies.containsKey(dependency)) {
+                throw new DependencyNotFoundException(dependency, component);
+            }
+            if (visiting.contains(dependency)) {
+                throw new CycleDependenciesFoundException(visiting);
+            }
+            visiting.push(dependency);
+            checkDependencies(dependency, visiting);
+            visiting.pop();
+        }
     }
 
     interface ComponentProvider<T> {
@@ -62,11 +69,6 @@ public class ContextConfig {
 
         private final Class<?> componentType;
 
-        /**
-         * 是否在构造中, 构造中则抛出异常
-         */
-        private boolean constructing = false;
-
         public ConstructorInjectProvider(Constructor<T> constructor, Class<?> componentType) {
             this.constructor = constructor;
             this.componentType = componentType;
@@ -74,25 +76,18 @@ public class ContextConfig {
 
         @Override
         public T get(Context context) {
-            if (constructing) {
-                throw new CycleDependenciesFoundException(componentType);
-            }
             try {
-                constructing = true;
                 // get dependency instance
                 Object[] dependencies = stream(constructor.getParameters())
-                    .map(p -> context.get(p.getType()).orElseThrow(() -> new DependencyNotFoundException(p.getType(), componentType)))
+                    .map(p -> context.get(p.getType()).get())
                     .toArray();
                 return constructor.newInstance(dependencies);
-            } catch (CycleDependenciesFoundException e) {
-                throw new CycleDependenciesFoundException(componentType, e);
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
                 throw new RuntimeException(e);
-            } finally {
-                constructing = false;
             }
         }
     }
+
     private <T> Constructor<T> getInjectConstructor(Class<T> implementation) {
         List<Constructor<?>> injectConstructors = stream(implementation.getConstructors())
             .filter(c -> c.isAnnotationPresent(Inject.class)).collect(Collectors.toList());

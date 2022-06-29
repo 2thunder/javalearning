@@ -25,7 +25,17 @@ public class ContextConfig {
     private final Map<Class<?>, List<Class<?>>> dependencies = new HashMap<>();
 
     public <ComponentType> void bind(Class<ComponentType> type, ComponentType instance) {
-        providers.put(type, context -> instance);
+        providers.put(type, new ComponentProvider<ComponentType>() {
+            @Override
+            public ComponentType get(Context context) {
+                return instance;
+            }
+
+            @Override
+            public List<Class<?>> getDependencies() {
+                return List.of();
+            }
+        });
         dependencies.put(type, new ArrayList<>());
     }
 
@@ -36,7 +46,7 @@ public class ContextConfig {
     }
 
     public Context getContext() {
-        dependencies.keySet().forEach(component -> checkDependencies(component, new Stack<>()));
+        providers.keySet().forEach(component -> checkDependencies(component, new Stack<>()));
         return new Context() {
             @Override
             public <T> Optional<T> get(Class<T> componentClass) {
@@ -46,8 +56,8 @@ public class ContextConfig {
     }
 
     private void checkDependencies(Class<?> component, Stack<Class<?>> visiting) {
-        for (Class<?> dependency : dependencies.get(component)) {
-            if (!dependencies.containsKey(dependency)) {
+        for (Class<?> dependency : providers.get(component).getDependencies()) {
+            if (!providers.containsKey(dependency)) {
                 throw new DependencyNotFoundException(dependency, component);
             }
             if (visiting.contains(dependency)) {
@@ -61,6 +71,8 @@ public class ContextConfig {
 
     interface ComponentProvider<T> {
         T get(Context context);
+
+        List<Class<?>> getDependencies();
     }
 
     public class ConstructorInjectProvider<T> implements ComponentProvider<T> {
@@ -85,6 +97,11 @@ public class ContextConfig {
             } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        @Override
+        public List<Class<?>> getDependencies() {
+            return stream(constructor.getParameters()).map(Parameter::getType).collect(Collectors.toList());
         }
     }
 

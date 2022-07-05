@@ -4,6 +4,7 @@ import jakarta.inject.Inject;
 
 import java.lang.reflect.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -84,7 +85,11 @@ public class ConstructorInjectProvider<T> implements ContextConfig.ComponentProv
         List<Method> result = new ArrayList<>();
         Class<?> current = component;
         while (current != Object.class) {
-            result.addAll(stream(current.getDeclaredMethods()).filter(m -> m.isAnnotationPresent(Inject.class)).toList());
+            result.addAll(stream(current.getDeclaredMethods()).filter(m -> m.isAnnotationPresent(Inject.class))
+                .filter(m -> result.stream().noneMatch(o -> (o.getName().equals(m.getName())) && Arrays.equals(m.getParameterTypes(), o.getParameterTypes())))
+                // 排除没有在子类中用Injected, 方法签名一致
+                .filter(m -> stream(component.getDeclaredMethods()).filter(m1 -> !m1.isAnnotationPresent(Inject.class)).noneMatch(o -> o.getName().equals(m.getName()) && Arrays.equals(m.getParameterTypes(), o.getParameterTypes())))
+                .toList());
             current = current.getSuperclass();
         }
 

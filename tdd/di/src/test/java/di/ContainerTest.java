@@ -269,6 +269,33 @@ public class ContainerTest {
                     assertEquals(1, component.superCalled);
                 }
 
+                static class SubclassOverrideSuperclassWithInject extends SuperClassWithInjectMethods {
+                    @Inject
+                    void install() {
+                        super.install();
+                    }
+                }
+
+                @Test
+                public void should_only_call_once_if_subclass_override_inject_method_with_inject() {
+                    contextConfig.bind(SubclassOverrideSuperclassWithInject.class, SubclassOverrideSuperclassWithInject.class);
+                    Optional<SubclassOverrideSuperclassWithInject> component = contextConfig.getContext().get(SubclassOverrideSuperclassWithInject.class);
+                    assertEquals(1, component.get().superCalled);
+                }
+
+                static class SubclassOverrideSuperClassWithNoInject extends SuperClassWithInjectMethods {
+                    void install() {
+                        super.install();
+                    }
+                }
+
+                @Test
+                public void should_not_call_inject_method_if_override_with_no_inject() {
+                    contextConfig.bind(SubclassOverrideSuperClassWithNoInject.class, SubclassOverrideSuperClassWithNoInject.class);
+                    Optional<SubclassOverrideSuperClassWithNoInject> component = contextConfig.getContext().get(SubclassOverrideSuperClassWithNoInject.class);
+                    assertEquals(0, component.get().superCalled);
+                }
+
                 // TODO throw exception if type parameter defined
 
                 // TODO include dependencies from inject methods

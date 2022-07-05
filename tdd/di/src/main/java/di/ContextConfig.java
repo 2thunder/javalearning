@@ -1,14 +1,6 @@
 package di;
 
-import jakarta.inject.Inject;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Parameter;
 import java.util.*;
-import java.util.stream.Collectors;
-
-import static java.util.Arrays.stream;
 
 
 /**
@@ -22,8 +14,6 @@ public class ContextConfig {
 
     private final Map<Class<?>, ComponentProvider<?>> providers = new HashMap<>();
 
-    private final Map<Class<?>, List<Class<?>>> dependencies = new HashMap<>();
-
     public <ComponentType> void bind(Class<ComponentType> type, ComponentType instance) {
         providers.put(type, new ComponentProvider<ComponentType>() {
             @Override
@@ -36,13 +26,10 @@ public class ContextConfig {
                 return List.of();
             }
         });
-        dependencies.put(type, new ArrayList<>());
     }
 
     public <Type, Implementation> void bind(Class<Type> componentClass, Class<Implementation> implementation) {
-        Constructor<Implementation> constructor = getInjectConstructor(implementation);
-        providers.put(componentClass, new ConstructorInjectProvider(constructor, componentClass));
-        dependencies.put(componentClass, stream(constructor.getParameters()).map(Parameter::getType).collect(Collectors.toList()));
+        providers.put(componentClass, new ConstructorInjectProvider(implementation));
     }
 
     public Context getContext() {
@@ -75,48 +62,4 @@ public class ContextConfig {
         List<Class<?>> getDependencies();
     }
 
-    public class ConstructorInjectProvider<T> implements ComponentProvider<T> {
-
-        private final Constructor<T> constructor;
-
-        private final Class<?> componentType;
-
-        public ConstructorInjectProvider(Constructor<T> constructor, Class<?> componentType) {
-            this.constructor = constructor;
-            this.componentType = componentType;
-        }
-
-        @Override
-        public T get(Context context) {
-            try {
-                // get dependency instance
-                Object[] dependencies = stream(constructor.getParameters())
-                    .map(p -> context.get(p.getType()).get())
-                    .toArray();
-                return constructor.newInstance(dependencies);
-            } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        @Override
-        public List<Class<?>> getDependencies() {
-            return stream(constructor.getParameters()).map(Parameter::getType).collect(Collectors.toList());
-        }
-    }
-
-    private <T> Constructor<T> getInjectConstructor(Class<T> implementation) {
-        List<Constructor<?>> injectConstructors = stream(implementation.getConstructors())
-            .filter(c -> c.isAnnotationPresent(Inject.class)).collect(Collectors.toList());
-        if (injectConstructors.size() > 1) {
-            throw new IllegalComponentException();
-        }
-        return (Constructor<T>) injectConstructors.stream().findFirst().orElseGet(() -> {
-            try {
-                return implementation.getConstructor();
-            } catch (NoSuchMethodException e) {
-                throw new IllegalComponentException();
-            }
-        });
-    }
 }

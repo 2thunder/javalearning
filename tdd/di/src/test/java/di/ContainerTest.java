@@ -2,13 +2,16 @@ package di;
 
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.eq;
 
 public class ContainerTest {
 
@@ -143,7 +146,59 @@ public class ContainerTest {
 
             @Nested
             public class FiledInjection {
+                static class ComponentWithFiledInjection {
+                    @Inject
+                    Dependency dependency;
+                }
 
+                static class SubclassWithFieldInjection extends ComponentWithFiledInjection {
+                }
+
+                // TODO inject filed
+                @Test
+                public void should_inject_dependency_via_filed() {
+                    Dependency dependency = new Dependency() {
+                    };
+                    contextConfig.bind(Dependency.class, dependency);
+                    contextConfig.bind(ComponentWithFiledInjection.class, ComponentWithFiledInjection.class);
+                    ComponentWithFiledInjection componentWithFiledInjection = contextConfig.getContext().get(ComponentWithFiledInjection.class).get();
+                    assertSame(dependency, componentWithFiledInjection.dependency);
+                }
+
+                @Test
+                public void should_subclass_inject_dependency_via_filed() {
+                    Dependency dependency = new Dependency() {
+                    };
+                    contextConfig.bind(Dependency.class, dependency);
+                    contextConfig.bind(SubclassWithFieldInjection.class, SubclassWithFieldInjection.class);
+                    SubclassWithFieldInjection componentWithFiledInjection = contextConfig.getContext().get(SubclassWithFieldInjection.class).get();
+                    assertSame(dependency, componentWithFiledInjection.dependency);
+                }
+
+                @Test
+                public void should_create_component_with_injection() {
+                    Context context = Mockito.mock(Context.class);
+                    Dependency dependency = Mockito.mock(Dependency.class);
+                    Mockito.when(context.get(eq(Dependency.class))).thenReturn(Optional.of(dependency));
+                    ConstructorInjectProvider<ComponentWithFiledInjection> componentConstructorInjectProvider = new ConstructorInjectProvider<>(ComponentWithFiledInjection.class);
+                    ComponentWithFiledInjection component = componentConstructorInjectProvider.get(context);
+                    assertSame(dependency, component.dependency);
+                }
+
+                // todo throw exception if field is final
+                // todo provide dependency information for filed injection
+                @Test
+                public void should_throw_exception_when_filed_dependency_not_found() {
+                    contextConfig.bind(ComponentWithFiledInjection.class, ComponentWithFiledInjection.class);
+                    assertThrows(DependencyNotFoundException.class, () -> contextConfig.getContext());
+                }
+
+                @Test
+                @Disabled
+                public void should_include_filed_dependency_in_cycle_dependencies() {
+                    ConstructorInjectProvider<ComponentWithFiledInjection> provider = new ConstructorInjectProvider<>(ComponentWithFiledInjection.class);
+                    assertArrayEquals(new Class<?>[]{Dependency.class}, provider.getDependencies().toArray(Class<?>[]::new));
+                }
             }
 
             @Nested

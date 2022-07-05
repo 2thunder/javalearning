@@ -14,10 +14,9 @@ https://time.geekbang.org/column/article/502058
   * ~~如果组件需要的依赖不存在，则抛出异常~~
   * ~~如果组件间存在循环依赖，则抛出异常~~
 * 字段注入
-  * 通过 Inject 标注将字段声明为依赖组件
-  * 如果组件需要的依赖不存在，则抛出异常
+  * ~~通过 Inject 标注将字段声明为依赖组件~~
   * 如果字段为 final 则抛出异常
-  * 如果组件间存在循环依赖，则抛出异常
+  * ~~依赖中应该包含 Inject filed 声明的依赖~~
 * 方法注入
   * 通过 Inject 标注的方法，其参数为依赖组件
   * 通过 Inject 标注的无参数方法，会被调用
@@ -48,3 +47,7 @@ https://time.geekbang.org/column/article/502058
 
 
 - [x] DI Container（5）：API接口该怎么设计？
+- [x] DI Container（6）：如何实现循环依赖检查？
+  1. 使用图算法检查环
+  2. 然后发现 `bind` 方法中 `providers` 和 `dependencies` 成对出现，使用 `providers` 替换掉 `dependencies` 并删除
+  3. 与类无关的方法内联 

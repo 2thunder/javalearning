@@ -4,13 +4,11 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.eq;
 
 public class ContainerTest {
 
@@ -171,41 +169,15 @@ public class ContainerTest {
                     assertSame(dependency, componentWithFiledInjection.dependency);
                 }
 
-                @Test
-                public void should_create_component_with_injection() {
-                    Context context = Mockito.mock(Context.class);
-                    Dependency dependency = Mockito.mock(Dependency.class);
-                    Mockito.when(context.get(eq(Dependency.class))).thenReturn(Optional.of(dependency));
-                    ConstructorInjectProvider<ComponentWithFiledInjection> componentConstructorInjectProvider = new ConstructorInjectProvider<>(ComponentWithFiledInjection.class);
-                    ComponentWithFiledInjection component = componentConstructorInjectProvider.get(context);
-                    assertSame(dependency, component.dependency);
-                }
-
                 // todo throw exception if field is final
                 // todo provide dependency information for filed injection
-                @Test
-                public void should_throw_exception_when_filed_dependency_missing() {
-                    contextConfig.bind(ComponentWithFiledInjection.class, ComponentWithFiledInjection.class);
-                    assertThrows(DependencyNotFoundException.class, () -> contextConfig.getContext());
-                }
+                //      -- dependency not found
+                //      -- cyclic dependency
 
                 @Test
                 public void should_include_field_dependency_in_dependencies() {
                     ConstructorInjectProvider<ComponentWithFiledInjection> provider = new ConstructorInjectProvider<>(ComponentWithFiledInjection.class);
                     assertArrayEquals(new Class<?>[]{Dependency.class}, provider.getDependencies().toArray(Class<?>[]::new));
-                }
-
-
-                class DependencyWithFiledInjection implements Dependency {
-                    @Inject
-                    ComponentWithFiledInjection component;
-                }
-
-                @Test
-                public void should_include_filed_dependency_in_cycle_dependencies() {
-                    contextConfig.bind(ComponentWithFiledInjection.class, ComponentWithFiledInjection.class);
-                    contextConfig.bind(Dependency.class, DependencyWithFiledInjection.class);
-                    assertThrows(CycleDependenciesFoundException.class, () -> contextConfig.getContext());
                 }
             }
 

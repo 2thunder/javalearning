@@ -2,7 +2,6 @@ package di;
 
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -47,7 +46,6 @@ public class ContainerTest {
 
             @Nested
             public class ConstructorInjection {
-                // TODO: No args constructor
                 @Test
                 public void should_bind_type_to_a_class_with_default_constructor() {
                     contextConfig.bind(Component.class, ComponentWithDefaultConstructorImplementation.class);
@@ -57,7 +55,6 @@ public class ContainerTest {
                     assertTrue(instance instanceof ComponentWithDefaultConstructorImplementation);
                 }
 
-                // TODO: with dependency
                 @Test
                 public void should_bind_type_to_a_class_with_inject_constructor() {
 
@@ -72,7 +69,6 @@ public class ContainerTest {
                     assertSame(dependency, ((ComponentWithInjectConstructorImplementation) instance).getDependency());
                 }
 
-                // TODO: A -> B -> C
                 @Test
                 public void should_bind_type_to_a_class_with_transitive_dependencies() {
                     contextConfig.bind(Component.class, ComponentWithInjectConstructorImplementation.class);
@@ -188,16 +184,28 @@ public class ContainerTest {
                 // todo throw exception if field is final
                 // todo provide dependency information for filed injection
                 @Test
-                public void should_throw_exception_when_filed_dependency_not_found() {
+                public void should_throw_exception_when_filed_dependency_missing() {
                     contextConfig.bind(ComponentWithFiledInjection.class, ComponentWithFiledInjection.class);
                     assertThrows(DependencyNotFoundException.class, () -> contextConfig.getContext());
                 }
 
                 @Test
-                @Disabled
-                public void should_include_filed_dependency_in_cycle_dependencies() {
+                public void should_include_field_dependency_in_dependencies() {
                     ConstructorInjectProvider<ComponentWithFiledInjection> provider = new ConstructorInjectProvider<>(ComponentWithFiledInjection.class);
                     assertArrayEquals(new Class<?>[]{Dependency.class}, provider.getDependencies().toArray(Class<?>[]::new));
+                }
+
+
+                class DependencyWithFiledInjection implements Dependency {
+                    @Inject
+                    ComponentWithFiledInjection component;
+                }
+
+                @Test
+                public void should_include_filed_dependency_in_cycle_dependencies() {
+                    contextConfig.bind(ComponentWithFiledInjection.class, ComponentWithFiledInjection.class);
+                    contextConfig.bind(Dependency.class, DependencyWithFiledInjection.class);
+                    assertThrows(CycleDependenciesFoundException.class, () -> contextConfig.getContext());
                 }
             }
 

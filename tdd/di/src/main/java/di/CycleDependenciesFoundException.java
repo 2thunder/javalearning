@@ -7,7 +7,6 @@ import java.util.Stack;
 /**
  * 循环依赖异常
  *
- * @author leiyutian yutianlei@shein.com
  * @version V1.0
  * @date 2022/5/17 13:36
  */
